@@ -1,5 +1,5 @@
 module Jobs
-  class Mingle < Jobs::Base
+  class Mingle < ::Jobs::Base
     sidekiq_options queue: :low
 
     def execute(args = {})
@@ -7,7 +7,8 @@ module Jobs
       return log_mismingle unless mingle_sets.presence
       mingle_sets.each { |pair| ::Mingle::Sender.new(pair.compact).send! }
     ensure
-      ::Mingle::Scheduler.new.reschedule!
+      at = SiteSetting.mingle_interval_number.send(SiteSetting.mingle_interval_type).from_now
+      ::Mingle::Scheduler.new.reschedule!(at: at)
     end
 
     private
